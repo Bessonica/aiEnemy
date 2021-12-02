@@ -1,0 +1,8 @@
+"aiEnemy"
+{
+  "base" "base"
+  "title" "gamemode for ai testing"
+  "maps" "^gm_"
+  "menusystem" "1"
+  "workshopid" ""
+}

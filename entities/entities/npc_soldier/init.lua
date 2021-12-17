@@ -51,7 +51,7 @@ function ENT:OnTakeDamage( dmginfo )
 	self:SetHealth(self:Health() - damage)
 	if(self:Health() <= 0 && attacker:IsPlayer() ) then
 	   SafeRemoveEntity(self)
-	   print(attacker:Nick() .. "is killed" .. self.nick .. )
+	   print(attacker:Nick() .. "is killed" .. self.nick )
 	end
 	
 	return false
@@ -72,7 +72,7 @@ function ENT:GetAttackSpread( Weapon, Target )
 	
 end
 
-
+--[[
 function ENT:GetRelationship( entity )
 
 	if( entity:IsPlayer() ) then
@@ -81,4 +81,4 @@ function ENT:GetRelationship( entity )
 	   return D_NU
 	end
 
-end
+end ]]

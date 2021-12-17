@@ -1,8 +1,7 @@
-
 ENT.Base = "base_entity"
 ENT.Type = "ai"
 
-ENT.PrintName		= "Standart Soldier"
+ENT.PrintName		= "NPC Soldier"
 ENT.Author			= "PanfilovDmytro"
 ENT.Contact			= ""
 ENT.Purpose			= "first test"

@@ -24,6 +24,7 @@ function ENT:Initialize()
    
 end
 
+
 ----------------------------------------------------
 -- ENT:Get/SetEnemy()
 -- Simple functions used in keeping our enemy saved
@@ -59,6 +60,19 @@ function ENT:HaveEnemy()
 	end
 end
 
+-- функция что бы определить видит ли npc игрока
+function ENT:PlayerNear()
+  for k, v in pairs( ents.FindInSphere(self:GetPos(), self.StartleDist) ) do
+      if( v:IsPlayer() && v:IsLineOfSightClear(self:GetPos() )    ) then
+	     return true
+	  end
+  end
+  
+  return false
+
+end
+
+
 ----------------------------------------------------
 -- ENT:FindEnemy()
 -- Returns true and sets our enemy if we find one
@@ -80,19 +94,6 @@ function ENT:FindEnemy()
 	return false
 end
 
-
-function ENT:PlayerNear()
-  for k, v in pairs( ents.FindInSphere(self:GetPos(), self.StartleDist) ) do
-      if( v:IsPlayer() && v:IsLineOfSightClear(self:GetPos() )    ) then
-	     return true
-	  end
-  end
-  
-  return false
-
-end
-
-
 ----------------------------------------------------
 -- ENT:RunBehaviour()
 -- This is where the meat of our AI is
@@ -101,27 +102,28 @@ function ENT:RunBehaviour()
 	-- This function is called when the entity is first spawned. It acts as a giant loop that will run as long as the NPC exists
 	while ( true ) do
 		-- Lets use the above mentioned functions to see if we have/can find a enemy
-		
-		--if ( self:HaveEnemy() ) then
-		--инициируем врага(игрока) для нпс
-		self:HaveEnemy()
-		
-		if ( self:PlayerNear() ) then
+		if ( self:HaveEnemy() ) then
 			
-			self.loco:FaceTowards(self:GetEnemy():GetPos())	
+			self.loco:FaceTowards(self:GetEnemy():GetPos())	-- Face our enemy
+
+			self:StartActivity( ACT_WALK )			-- Set the animation
 			
-			self:StartActivity( ACT_WALK )			
-			self.loco:SetDesiredSpeed( 40 )		
-			--
-			self:ChaseEnemy( ) 						
-			
-			self:StartActivity( ACT_IDLE )			
+			--self:StartActivity( ACT_MELEE_ATTACK1 )
+			    
+			self.loco:SetDesiredSpeed( 40 )		-- Set the speed that we will be moving at. Don't worry, the animation will speed up/slow down to match
+			--self.loco:SetAcceleration(900)			-- We are going to run at the enemy quickly, so we want to accelerate really fast
+			self:ChaseEnemy( ) 						-- The new function like MoveToPos.
+			self:AttackEnemy( )
+			--self.loco:SetAcceleration(400)			-- Set this back to its default since we are done chasing the enemy
+			--self:PlaySequenceAndWait( "charge_miss_slide" )	-- Lets play a fancy animation when we stop moving
+			self:StartActivity( ACT_IDLE )			--We are done so go back to idle
 			-- Now once the above function is finished doing what it needs to do, the code will loop back to the start
 			-- unless you put stuff after the if statement. Then that will be run before it loops
 		else
-		
+			-- Since we can't find an enemy, lets wander
+			-- Its the same code used in Garry's test bot
 			self:StartActivity( ACT_WALK )			-- Walk anmimation
-			self.loco:SetDesiredSpeed( 60 )		-- Walk speed
+			self.loco:SetDesiredSpeed( 200 )		-- Walk speed
 			self:MoveToPos( self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 400 ) -- Walk to a random place within about 400 units (yielding)
 			self:StartActivity( ACT_IDLE )
 		end
@@ -150,7 +152,9 @@ function ENT:ChaseEnemy( options )
 
 	if ( !path:IsValid() ) then return "failed" end
 
-	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60 ) do
+	
+
 	
 		if ( path:GetAge() > 0.1 ) then					-- Since we are following the player we have to constantly remake the path
 			path:Compute(self, self:GetEnemy():GetPos())-- Compute the path towards the enemy's position again
@@ -163,13 +167,15 @@ function ENT:ChaseEnemy( options )
 			self:HandleStuck()
 			return "stuck"
 		end
+		
+		--if (path:GetLength()<=60) then
+		--    self:AttackEnemy()
+		--end
 
-		coroutine.yield()
+		
 
 	end
 	
-	print("ZOMBIE REACHED PLAYER")
-	self:AttackEnemy()
 
 	return "ok"
 
@@ -187,7 +193,7 @@ self:StartActivity( ACT_MELEE_ATTACK1 )
 print("ATTACKED")
 oldHP = self:GetEnemy():Health()
 self:GetEnemy():SetHealth(oldHP - 10)
---coroutine.wait(1)
+coroutine.wait(1)
 
 end
 

@@ -13,7 +13,7 @@ ENT.Type = "nextbot"
 
 
 function ENT:Initialize()
-	self:SetModel( "models/hunter.mdl" )
+	self:SetModel( "models/Zombie/Classic.mdl" )
 	
 	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
 	self.SearchRadius 	= 1000	-- How far to search for enemies
@@ -89,13 +89,15 @@ function ENT:RunBehaviour()
 		if ( self:HaveEnemy() ) then
 			-- Now that we have an enemy, the code in this block will run
 			self.loco:FaceTowards(self:GetEnemy():GetPos())	-- Face our enemy
-			self:PlaySequenceAndWait( "plant" )		-- Lets make a pose to show we found a enemy
-			self:PlaySequenceAndWait( "hunter_angry" )-- Play an animation to show the enemy we are angry
-			self:PlaySequenceAndWait( "unplant" )	-- Get out of the pose
-			self:StartActivity( ACT_RUN )			-- Set the animation
-			self.loco:SetDesiredSpeed( 450 )		-- Set the speed that we will be moving at. Don't worry, the animation will speed up/slow down to match
-			self.loco:SetAcceleration(900)			-- We are going to run at the enemy quickly, so we want to accelerate really fast
+
+			self:StartActivity( ACT_WALK )			-- Set the animation
+			
+			--self:StartActivity( ACT_MELEE_ATTACK1 )
+			    
+			self.loco:SetDesiredSpeed( 40 )		-- Set the speed that we will be moving at. Don't worry, the animation will speed up/slow down to match
+			--self.loco:SetAcceleration(900)			-- We are going to run at the enemy quickly, so we want to accelerate really fast
 			self:ChaseEnemy( ) 						-- The new function like MoveToPos.
+			self:AttackEnemy( )
 			self.loco:SetAcceleration(400)			-- Set this back to its default since we are done chasing the enemy
 			self:PlaySequenceAndWait( "charge_miss_slide" )	-- Lets play a fancy animation when we stop moving
 			self:StartActivity( ACT_IDLE )			--We are done so go back to idle
@@ -134,7 +136,9 @@ function ENT:ChaseEnemy( options )
 
 	if ( !path:IsValid() ) then return "failed" end
 
-	while ( path:IsValid() and self:HaveEnemy() ) do
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60 ) do
+	
+
 	
 		if ( path:GetAge() > 0.1 ) then					-- Since we are following the player we have to constantly remake the path
 			path:Compute(self, self:GetEnemy():GetPos())-- Compute the path towards the enemy's position again
@@ -147,12 +151,33 @@ function ENT:ChaseEnemy( options )
 			self:HandleStuck()
 			return "stuck"
 		end
+		
+		if (path:GetLength()<=60) then
+		    self:AttackEnemy()
+		end
 
-		coroutine.yield()
+		
 
 	end
+	
 
 	return "ok"
+
+end
+
+-- когда зомби перестал идти за игроком он должен его бить
+-- пока растояние меньше 50 (path:GetLength()>50  -- ChaseEnemy) зомби бьет врага/игрока
+-- self:GetEnemy():GetPos()
+
+--ПРОБЛЕМА нпс неотзывчивый
+function ENT:AttackEnemy()
+
+
+self:StartActivity( ACT_MELEE_ATTACK1 )
+print("ATTACKED")
+oldHP = self:GetEnemy():Health()
+self:GetEnemy():SetHealth(oldHP - 10)
+coroutine.wait(1)
 
 end
 
@@ -170,7 +195,7 @@ function ENT:Initialize()
 end
 
 
-
+-- ВАЖНАЯ ФУНКЦИЯ 
 function ENT:PlayerNear()
   for k, v in pairs( ents.FindInSphere(self:GetPos(), self.StartleDist) ) do
       if( v:IsPlayer() && v:IsLineOfSightClear(self:GetPos() )    ) then

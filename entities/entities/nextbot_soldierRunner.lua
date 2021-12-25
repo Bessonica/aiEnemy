@@ -349,6 +349,16 @@ function ENT:CircleAroundTarget(dest)
 	
 	print("STARTED TO CIRCLE")
 	
+	
+	
+	-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	--идея, пусть будет переменная которая после каждого пролета while будет увеличиваться
+	-- это бдет по сути degrees 
+	-- !!!!! перенести centerX, centerY внутрь while так как игрок постоянно движется  !!!!
+	-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	
+	local degrees = 1
+	
 	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
 	       print("CIRCLING")
 		   
@@ -362,10 +372,11 @@ function ENT:CircleAroundTarget(dest)
 			  path:Compute(self, newCoord)
 		     end
 			 
-			 while(path:GetLength()>=10) do
-			   path:Update( self )
-			 end
+			 --while(path:GetLength()>=10) do
+			   --path:Update( self )
+			 --end
 		     	
+			 path:Update( self )
 			 
 			 
 			 

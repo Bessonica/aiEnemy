@@ -21,6 +21,7 @@ ENT.Type = "nextbot"
 -- 2) берем координату игрока и укрытия и проводим прямую между ними
 -- 3) удлиняем эту прямую и теперь мы получаем координату где между нпс и игроком будет укрытие
 
+--      -----  СДЕЛАНО  -----
 --      ВИЗУАЛИЗАЦИЯ
 -- X = точка куда отправлятся игроку
 -- O = укрытие
@@ -39,8 +40,9 @@ ENT.Type = "nextbot"
 -- 1 пусть npc стоит на месте и стреляет по игроку
 function ENT:Initialize()
 	--self:SetModel( "models/Combine_Soldier.mdl" )
-    self:SetModel( "models/Zombie/Classic.mdl" )
-	
+    self:SetModel( "models/Humans/Group01/Female_01.mdl" )
+	--"models/Humans/Group01/Female_01.mdl" 
+	--"models/Zombie/Classic.mdl"
 	self.LoseTargetDist	= 2000	
 	self.SearchRadius 	= 1000	
 	
@@ -63,6 +65,8 @@ function ENT:Initialize()
 	--self.cover:Sub(self.coverSt)
 	print("new coord")
 	print(self.cover)
+	
+	self:SetHealth(150)
     
    
    
@@ -134,11 +138,24 @@ function ENT:RunBehaviour()
 			--self:StartActivity( ACT_RUN )		
 		    
 			--self:StartActivity( ACT_WALK )			
-			self.loco:SetDesiredSpeed( 150 )	
-			self:StartActivity( ACT_WALK )
+			self.loco:SetDesiredSpeed( 300 )	
+			self:StartActivity( ACT_RUN )
+			--self:StartActivity( ACT_WALK )
+			
+			--self:RunAtTarget(self:GetEnemy():GetPos())
+			self:CircleAroundTarget(self:GetEnemy():GetPos())
 			-- Takecover
+			--if(self:Health()<=10)
+			if(self:Health()<=70) then
 			self:TakeCover(self.cover)
-			self:StartActivity( ACT_IDLE )	
+			end
+			print("Health")
+			print(self:Health())
+			--self:StartActivity( ACT_IDLE )	
+			--ACT_COVER_LOW Y
+			--ACT_COVER   X
+			--self:StartActivity( ACT_COVER_LOW )
+			
 			
 			
 		
@@ -216,7 +233,7 @@ function ENT:TakeCover( dest )
 	
 	--self:GetEnemy():GetPos()
 	
-	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=10) do
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=40) do
 	
 	    -- creat new point to hide behind cover 
 		-- Vector( newX, newY)
@@ -253,8 +270,123 @@ function ENT:TakeCover( dest )
 		coroutine.yield()
 
 	end
+	
+	self:StartActivity( ACT_COVER_LOW )
 	return "ok"
 end
+
+
+
+--run at target in strait line,if player near target takes damage
+function ENT:RunAtTarget(dest)
+--dest = player
+	local dest = dest or {}
+	local path = Path( "Follow" )
+	path:SetMinLookAheadDistance( dest.lookahead or 300 )
+	path:SetGoalTolerance( dest.tolerance or 20 )
+	path:Compute( self, dest )	
+
+    if ( !path:IsValid() ) then return "failed" end
+	    
+		-- заранее указывааем координату игрока,что бы она не обновлялась
+		local targetX = dest.x
+		local targetY = dest.y
+		
+		local k = 2
+		
+		local newX =  k*targetX +(1-k)*self:GetPos().x
+		local newY =  k*targetY +(1-k)*self:GetPos().y
+		local newCoord = Vector(newX, newY)
+	
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
+	--будет лучше если точка игрока не будет менятся он должен бежать по прямой
+
+		
+		if ( path:GetAge() > 0.1 ) then					
+			--path:Compute(self, dest)
+			path:Compute(self, newCoord)
+		end
+		path:Update( self )	
+		
+		if ( dest.draw ) then path:Draw() end
+		
+		if ( self.loco:IsStuck() ) then
+			self:HandleStuck()
+			return "stuck"
+		end
+
+		coroutine.yield()
+	end
+	
+end
+
+--run around player 
+-- times - сколько раз кружлять вокруг игрока
+-- сделать радиус круга полурандомный,что бы несколько нпс не наступали друг другу на "пятки"
+-- ENT:CircleAroundTarget(dest, times, radius)
+function ENT:CircleAroundTarget(dest)
+
+    function PointOnCircle( ang, radius, offX, offY )
+	 ang =  math.rad( ang )
+	 local x = math.cos( ang ) * radius + offX
+	 local y = math.sin( ang ) * radius + offY
+	 return x, y
+    end
+
+    local numSquares = 36 --How many squares do we want to draw?
+    local interval = 360 / numSquares
+    local centerX, centerY = dest.x, dest.y
+    local radius = 80
+
+
+	local dest = dest or {}
+	local path = Path( "Follow" )
+	path:SetMinLookAheadDistance( dest.lookahead or 300 )
+	path:SetGoalTolerance( dest.tolerance or 20 )
+	path:Compute( self, dest )	
+
+    if ( !path:IsValid() ) then return "failed" end
+	
+	print("STARTED TO CIRCLE")
+	
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
+	       print("CIRCLING")
+		   
+		   for degrees = 1, 360, interval do --Start at 1, go to 360, and skip forward at even intervals.
+	       
+		     local xCircle, yCircle = PointOnCircle( degrees, radius, centerX, centerY )
+			 local newCoord = Vector(xCircle, yCircle)
+			 
+			 if ( path:GetAge() > 0.1 ) then					
+			  --path:Compute(self, dest)
+			  path:Compute(self, newCoord)
+		     end
+			 
+			 while(path:GetLength()>=10) do
+			   path:Update( self )
+			 end
+		     	
+			 
+			 
+			 
+			 if ( dest.draw ) then path:Draw() end
+		
+		     if ( self.loco:IsStuck() ) then
+		      self:HandleStuck()
+		      return "stuck"
+	         end
+
+		      coroutine.yield()
+		   
+		   
+		   
+		   end
+	
+	end
+
+
+end
+
 
 -- когда зомби перестал идти за игроком он должен его бить
 -- пока растояние меньше 50 (path:GetLength()>50  -- ChaseEnemy) зомби бьет врага/игрока

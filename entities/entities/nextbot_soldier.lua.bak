@@ -24,6 +24,7 @@ function ENT:Initialize()
 		--self.cover = { x=-800, y=80, z=0 }
 	--print(self.cover.x)
    
+   self:SetHealth(200)
    
 end
 

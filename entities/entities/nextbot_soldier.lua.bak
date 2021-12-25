@@ -15,18 +15,20 @@ ENT.Type = "nextbot"
 function ENT:Initialize()
 	self:SetModel( "models/Zombie/Classic.mdl" )
 	
-	self.LoseTargetDist	= 2000	-- How far the enemy has to be before we lose them
-	self.SearchRadius 	= 1000	-- How far to search for enemies
+	self.LoseTargetDist	= 2000	
+	self.SearchRadius 	= 1000	
 	
 	self.StartleDist = 500
     self.WanderDist = 200
+	
+		--self.cover = { x=-800, y=80, z=0 }
+	--print(self.cover.x)
    
    
 end
 
 ----------------------------------------------------
--- ENT:Get/SetEnemy()
--- Simple functions used in keeping our enemy saved
+
 ----------------------------------------------------
 function ENT:SetEnemy(ent)
 	self.Enemy = ent
@@ -35,47 +37,29 @@ function ENT:GetEnemy()
 	return self.Enemy
 end
 
-----------------------------------------------------
--- ENT:HaveEnemy()
--- Returns true if we have a enemy
-----------------------------------------------------
+
 function ENT:HaveEnemy()
-	-- If our current enemy is valid
 	if ( self:GetEnemy() and IsValid(self:GetEnemy()) ) then
-		-- If the enemy is too far
 		if ( self:GetRangeTo(self:GetEnemy():GetPos()) > self.LoseTargetDist ) then
-			-- If the enemy is lost then call FindEnemy() to look for a new one
-			-- FindEnemy() will return true if an enemy is found, making this function return true
 			return self:FindEnemy()
-		-- If the enemy is dead( we have to check if its a player before we use Alive() )
 		elseif ( self:GetEnemy():IsPlayer() and !self:GetEnemy():Alive() ) then
 			return self:FindEnemy()		-- Return false if the search finds nothing
 		end	
-		-- The enemy is neither too far nor too dead so we can return true
 		return true
 	else
-		-- The enemy isn't valid so lets look for a new one
 		return self:FindEnemy()
 	end
 end
 
-----------------------------------------------------
--- ENT:FindEnemy()
--- Returns true and sets our enemy if we find one
-----------------------------------------------------
+
 function ENT:FindEnemy()
-	-- Search around us for entities
-	-- This can be done any way you want eg. ents.FindInCone() to replicate eyesight
 	local _ents = ents.FindInSphere( self:GetPos(), self.SearchRadius )
-	-- Here we loop through every entity the above search finds and see if it's the one we want
 	for k,v in ipairs( _ents ) do
 		if ( v:IsPlayer() ) then
-			-- We found one so lets set it as our enemy and return true
 			self:SetEnemy(v)
 			return true
 		end
 	end	
-	-- We found nothing so we will set our enemy as nil (nothing) and return false
 	self:SetEnemy(nil)
 	return false
 end
@@ -93,14 +77,11 @@ function ENT:PlayerNear()
 end
 
 
-----------------------------------------------------
--- ENT:RunBehaviour()
--- This is where the meat of our AI is
-----------------------------------------------------
+--TODO 
+--добавит звуки, анимации-реакции на игрока(мол зомби увидел игрока)
+
 function ENT:RunBehaviour()
-	-- This function is called when the entity is first spawned. It acts as a giant loop that will run as long as the NPC exists
 	while ( true ) do
-		-- Lets use the above mentioned functions to see if we have/can find a enemy
 		
 		--if ( self:HaveEnemy() ) then
 		--инициируем врага(игрока) для нпс
@@ -116,17 +97,15 @@ function ENT:RunBehaviour()
 			self:ChaseEnemy( ) 						
 			
 			self:StartActivity( ACT_IDLE )			
-			-- Now once the above function is finished doing what it needs to do, the code will loop back to the start
-			-- unless you put stuff after the if statement. Then that will be run before it loops
+
 		else
 		
-			self:StartActivity( ACT_WALK )			-- Walk anmimation
-			self.loco:SetDesiredSpeed( 60 )		-- Walk speed
+			self:StartActivity( ACT_WALK )			
+			self.loco:SetDesiredSpeed( 60 )		
 			self:MoveToPos( self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 400 ) -- Walk to a random place within about 400 units (yielding)
 			self:StartActivity( ACT_IDLE )
 		end
-		-- At this point in the code the bot has stopped chasing the player or finished walking to a random spot
-		-- Using this next function we are going to wait 2 seconds until we go ahead and repeat it 
+
 		coroutine.wait(2)
 		
 	end
@@ -134,11 +113,7 @@ function ENT:RunBehaviour()
 end	
 
 ----------------------------------------------------
--- ENT:ChaseEnemy()
--- Works similarly to Garry's MoveToPos function
---  except it will constantly follow the
---  position of the enemy until there no longer
---  is one.
+
 ----------------------------------------------------
 function ENT:ChaseEnemy( options )
 
@@ -146,19 +121,19 @@ function ENT:ChaseEnemy( options )
 	local path = Path( "Follow" )
 	path:SetMinLookAheadDistance( options.lookahead or 300 )
 	path:SetGoalTolerance( options.tolerance or 20 )
-	path:Compute( self, self:GetEnemy():GetPos() )		-- Compute the path towards the enemies position
+	path:Compute( self, self:GetEnemy():GetPos() )		
 
 	if ( !path:IsValid() ) then return "failed" end
 
 	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
 	
-		if ( path:GetAge() > 0.1 ) then					-- Since we are following the player we have to constantly remake the path
-			path:Compute(self, self:GetEnemy():GetPos())-- Compute the path towards the enemy's position again
+		if ( path:GetAge() > 0.1 ) then					
+			path:Compute(self, self:GetEnemy():GetPos())
 		end
-		path:Update( self )								-- This function moves the bot along the path
+		path:Update( self )								
 		
 		if ( options.draw ) then path:Draw() end
-		-- If we're stuck, then call the HandleStuck function and abandon
+		
 		if ( self.loco:IsStuck() ) then
 			self:HandleStuck()
 			return "stuck"
@@ -180,6 +155,8 @@ end
 -- self:GetEnemy():GetPos()
 
 --ПРОБЛЕМА нпс неотзывчивый
+
+--TODO добавить звуки удара
 function ENT:AttackEnemy()
 
 

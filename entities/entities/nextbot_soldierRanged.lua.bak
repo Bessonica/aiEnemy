@@ -32,15 +32,32 @@ ENT.Type = "nextbot"
 --      ИГРОК
 --
 
+-- Vector(x, y, z)
+-- Angle(pitch, yaw, roll)
 
+--TODO
+-- 1 пусть npc стоит на месте и стреляет по игроку
 function ENT:Initialize()
-	self:SetModel( "models/Zombie/Classic.mdl" )
+	self:SetModel( "models/Combine_Soldier.mdl" )
+	--self:Give("weapon_shotgun")
+	
+	--local wep = ents.Create("weapon_shotgun")
+	
+	--wep:SetOwner(self)
+	--wep:SetPos(shootpos.Pos)
+	--wep:Spawn()
+	
+	--local wep = ents.Create("weapon_shotgun")
+	--wep:SetOwner(self)
+	--wep:Spawn()
 	
 	self.LoseTargetDist	= 2000	
 	self.SearchRadius 	= 1000	
 	
 	self.StartleDist = 500
     self.WanderDist = 200
+	
+	self:GiveWeapon("weapon_shotgun")
    
    
 end
@@ -61,7 +78,7 @@ function ENT:HaveEnemy()
 		if ( self:GetRangeTo(self:GetEnemy():GetPos()) > self.LoseTargetDist ) then
 			return self:FindEnemy()
 		elseif ( self:GetEnemy():IsPlayer() and !self:GetEnemy():Alive() ) then
-			return self:FindEnemy()		-- Return false if the search finds nothing
+			return self:FindEnemy()		
 		end	
 		return true
 	else
@@ -106,29 +123,27 @@ function ENT:RunBehaviour()
 		self:HaveEnemy()
 		
 		if ( self:PlayerNear() ) then
-			
+		    --print( self:GetPos() )
+			self:StartActivity( ACT_IDLE )		
 			self.loco:FaceTowards(self:GetEnemy():GetPos())	
-			
-			self:StartActivity( ACT_WALK )			
-			self.loco:SetDesiredSpeed( 40 )		
-			--
-			self:ChaseEnemy( ) 						
-			
-			self:StartActivity( ACT_IDLE )			
+			--self:ShootEnemy()
+		
 
 		else
-		
-			self:StartActivity( ACT_WALK )			
-			self.loco:SetDesiredSpeed( 60 )		
-			self:MoveToPos( self:GetPos() + Vector( math.Rand( -1, 1 ), math.Rand( -1, 1 ), 0 ) * 400 ) -- Walk to a random place within about 400 units (yielding)
-			self:StartActivity( ACT_IDLE )
+
+
 		end
 
-		coroutine.wait(2)
+		coroutine.wait(1)
 		
 	end
 
 end	
+
+
+function ENT:ShootEnemy( options )
+
+end
 
 ----------------------------------------------------
 
@@ -162,6 +177,7 @@ function ENT:ChaseEnemy( options )
 	end
 	
 	print("ZOMBIE REACHED PLAYER")
+	print(self:GetPos())
 	self:AttackEnemy()
 
 	return "ok"
@@ -239,10 +255,40 @@ end
 		
 	-----------------------------------------------------------]]
 
+--[[---------------------------------------------------------
+
+function ENT:GiveWeapon(weaponcls)
+	if not IsValid(self) then return end
+	if self.Weapon then self.Weapon:Remove() end
+	local att = "anim_attachment_RH"
+
+	local shootpos = self:GetAttachment(self:LookupAttachment(att))
+	
+	local wep = ents.Create(weaponcls)
+
+	wep:SetOwner(self)
+	wep:SetPos(shootpos.Pos)
+	wep:Spawn()
+
+	wep.DontPickUp = true
+	wep:SetSolid(SOLID_NONE)
+	wep:SetParent(self)
+
+	wep:SetAngles(self:GetForward():Angle())
+
+	wep:Fire("setparentattachment", att)
+	--wep:AddEffects(EF_BONEMERGE)
+
+	self.Weapon = wep
+
+	for _,fn in pairs(self.OnArm) do fn() end
+end
+-----------------------------------------------------------]]
+
 
 
 list.Set("NPC", "nextbot_custom", {
-  Name = "standart nextbot",
-  Class = "nextbot_soldier",
+  Name = "standart nextbot ranged",
+  Class = "nextbot_soldierRanged",
   Category = "NextBot"
 })

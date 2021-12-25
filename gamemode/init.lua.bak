@@ -51,10 +51,34 @@ npc:SetPos(ply:GetPos() + Vector(0, 300, 0) )
 
 ]]
 function GM:PlayerSpawn( ply )
-    local npc = ents.Create("nextbot_soldier")
-	npc:SetPos(ply:GetPos() + Vector(-1000, 100, 0) )
-	npc:Spawn()
+    local npcZombie = ents.Create("nextbot_soldier")
+	npcZombie:SetPos(ply:GetPos() + Vector(-1000, 100, 0) )
+	npcZombie:Spawn()
+	
+	local npcShooter = ents.Create("nextbot_soldierRanged")
+	npcShooter:SetPos(ply:GetPos() + Vector(-800, 80, 0) )
+	npcShooter:Spawn()
+	
+	local npcShooter1 = ents.Create("nextbot_soldierRanged")
+	npcShooter1:SetPos(ply:GetPos() + Vector(-500, 80, 0) )
+	npcShooter1:Spawn()
+	
+	--local wep = ents.Create("weapon_shotgun")
+	--wep:SetOwner(npcShooter)
+	--wep:Spawn()
+	
+	--npcShooter:Give(wep)
+	
+	
+	--npcShooter:Give("weapon_shotgun")
+	
+	
+	--nextbot_soldierRunner
+	local npcRunner1 = ents.Create("nextbot_soldierRunner")
+	npcRunner1:SetPos(ply:GetPos() + Vector(-900, 80, 0) )
+	npcRunner1:Spawn()
 	
 	
 	ply:Give("weapon_shotgun")
+	ply:GiveAmmo( 100, "BuckShot")
 end

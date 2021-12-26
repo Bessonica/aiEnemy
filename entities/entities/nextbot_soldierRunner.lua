@@ -66,7 +66,12 @@ function ENT:Initialize()
 	print("new coord")
 	print(self.cover)
 	
-	self:SetHealth(150)
+	self:SetHealth(80)
+	
+	self.TestCircle = Vector(-500, 80, 0)
+	 
+	 -- радиус нпс кружляет вокруг игрока  
+	self.radius = 300
     
    
    
@@ -143,7 +148,14 @@ function ENT:RunBehaviour()
 			--self:StartActivity( ACT_WALK )
 			
 			--self:RunAtTarget(self:GetEnemy():GetPos())
+			--self.TestCircle
+			
+			--дать ускорение при набегании
 			self:CircleAroundTarget(self:GetEnemy():GetPos())
+			
+			
+			--self:CircleAroundTarget(self.TestCircle)
+			
 			-- Takecover
 			--if(self:Health()<=10)
 			if(self:Health()<=70) then
@@ -215,7 +227,9 @@ function ENT:ChaseEnemy( options )
 
 end
 
-
+ --      !!!!  -------------- TODO --------------------- !!!!
+ -- звук испуга когда они убегают
+ -- может после того как они спрятались они получают немного хп ???
 function ENT:TakeCover( dest )
 -- dest = cover
 	local dest = dest or {}
@@ -324,19 +338,41 @@ end
 -- times - сколько раз кружлять вокруг игрока
 -- сделать радиус круга полурандомный,что бы несколько нпс не наступали друг другу на "пятки"
 -- ENT:CircleAroundTarget(dest, times, radius)
+
+ --      !!!!  -------------- TODO --------------------- !!!!
+-- дать возможность установить количество кругов,или сколько времени кружлять
+-- дать ускорение при набегании
+-- как им всем нпс дать разніе радиусы?
+-- в инит сделать мин радиус + полурандомное число
+-- дать разные звуки для набегание
+
 function ENT:CircleAroundTarget(dest)
 
+-- дать ускорение при набегании
+ --      !!!!  -------------- TODO --------------------- !!!!
+-- как им всем нпс дать разніе радиусы?
+-- в инит сделать мин радиус + полурандомное число
+-- дать разные звуки для набегание
+
     function PointOnCircle( ang, radius, offX, offY )
+	print("______________________________")
+	 print("angle")
+	 print(ang)
+	 
 	 ang =  math.rad( ang )
 	 local x = math.cos( ang ) * radius + offX
 	 local y = math.sin( ang ) * radius + offY
+	 
+	 print("CALCULATED POINTOnCircle x, y, ang")
+	 print(x, y, ang)
+	 print("_______________________________")
 	 return x, y
     end
 
-    local numSquares = 36 --How many squares do we want to draw?
-    local interval = 360 / numSquares
+
     local centerX, centerY = dest.x, dest.y
-    local radius = 80
+	--           радиус от игрока и нсп
+    --local radius = 250
 
 
 	local dest = dest or {}
@@ -357,16 +393,44 @@ function ENT:CircleAroundTarget(dest)
 	-- !!!!! перенести centerX, centerY внутрь while так как игрок постоянно движется  !!!!
 	-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	
-	local degrees = 1
+	-- идея в инит создаем массив degrees где 1 -- 360
+	-- в while обновляем путь и в каждой итерации увеличиваем degrees на 1
+	--плюсуем 1 или переходим на новый элемент массива.(первый скорее всего проще)
 	
-	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
-	       print("CIRCLING")
+	--как мне знать наверняка что он дойдет до координаты,или он не успеет и шагу сделать как будет новая координата и круга не будет
+	-- нужно проверять
+	
+    degrees = 1
+	
+	--  while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
+	while ( path:IsValid() and self:HaveEnemy() ) do
+	       --print("CIRCLING")
+		   -- local centerX, centerY = dest.x, dest.y
+		   --self:GetEnemy():GetPos().x
 		   
-		   for degrees = 1, 360, interval do --Start at 1, go to 360, and skip forward at even intervals.
-	       
-		     local xCircle, yCircle = PointOnCircle( degrees, radius, centerX, centerY )
+		   --local centerX, centerY = self:GetEnemy():GetPos().x, self:GetEnemy():GetPos().y
+		   
+		   local centerX = self:GetEnemy():GetPos().x
+		   local centerY = self:GetEnemy():GetPos().y
+	         -- получаем новую координату 
+		     local xCircle, yCircle = PointOnCircle( degrees, self.radius, centerX, centerY )
 			 local newCoord = Vector(xCircle, yCircle)
+			  degrees = degrees + 10
+			  print("DEGREES")
+			  print(degrees)
+			  print("COORD")
+			  print(newCoord)
+			  
+			  if (degrees >= 360) then
+			  degrees = 1
+			  print("     -------- NOW DEGREES IS 1 -------    ")
+			  end
 			 
+			 
+			 -- _______________________________________________
+			 -- идем к этой координате
+			 
+			 -- может сделать тут больше цифру, и тогда у нпс будет больше времени передвигатьс
 			 if ( path:GetAge() > 0.1 ) then					
 			  --path:Compute(self, dest)
 			  path:Compute(self, newCoord)
@@ -391,7 +455,7 @@ function ENT:CircleAroundTarget(dest)
 		   
 		   
 		   
-		   end
+		   
 	
 	end
 

@@ -24,7 +24,7 @@ function ENT:Initialize()
 		--self.cover = { x=-800, y=80, z=0 }
 	--print(self.cover.x)
    
-   self:SetHealth(200)
+   --self:SetHealth(200)
    
 end
 
@@ -107,7 +107,7 @@ function ENT:RunBehaviour()
 			self:StartActivity( ACT_IDLE )
 		end
 
-		coroutine.wait(2)
+		coroutine.wait(0.5)
 		
 	end
 
@@ -159,13 +159,14 @@ end
 
 --TODO добавить звуки удара
 function ENT:AttackEnemy()
-
-
-self:StartActivity( ACT_MELEE_ATTACK1 )
-print("ATTACKED")
-oldHP = self:GetEnemy():Health()
-self:GetEnemy():SetHealth(oldHP - 10)
---coroutine.wait(1)
+        
+		
+		self:StartActivity( ACT_MELEE_ATTACK1 )
+        self:EmitSound( "npc/zombie/claw_strike2.wav" )
+        print("ATTACKED")
+        oldHP = self:GetEnemy():Health()
+        self:GetEnemy():SetHealth(oldHP - 10)
+        coroutine.wait(1)
 
 end
 

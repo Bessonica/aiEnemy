@@ -107,7 +107,7 @@ function ENT:RunBehaviour()
 			self:StartActivity( ACT_IDLE )
 		end
 
-		coroutine.wait(2)
+		coroutine.wait(0.5)
 		
 	end
 
@@ -157,15 +157,16 @@ end
 
 --ПРОБЛЕМА нпс неотзывчивый
 
---TODO добавить звуки удара
+--TODO добавить звуки удара   DONE
 function ENT:AttackEnemy()
-
-
-self:StartActivity( ACT_MELEE_ATTACK1 )
-print("ATTACKED")
-oldHP = self:GetEnemy():Health()
-self:GetEnemy():SetHealth(oldHP - 10)
---coroutine.wait(1)
+        
+		
+		self:StartActivity( ACT_MELEE_ATTACK1 )
+        self:EmitSound( "npc/zombie/claw_strike2.wav" )
+        print("ATTACKED")
+        oldHP = self:GetEnemy():Health()
+        self:GetEnemy():SetHealth(oldHP - 10)
+        coroutine.wait(1)
 
 end
 

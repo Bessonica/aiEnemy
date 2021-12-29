@@ -55,14 +55,20 @@ function GM:PlayerSpawn( ply )
 	npcZombie:SetPos(ply:GetPos() + Vector(-1000, 100, 0) )
 	npcZombie:Spawn()
 	
-	--npc to show cover
+	--npcs to show cover
 	local npcShooter = ents.Create("nextbot_soldierRanged")
 	npcShooter:SetPos( Vector(-800, 80, 0) )
 	npcShooter:Spawn()
 	
 	local npcShooter1 = ents.Create("nextbot_soldierRanged")
-	npcShooter1:SetPos(ply:GetPos() + Vector(-500, 80, 0) )
+	npcShooter1:SetPos(Vector(-500, 80, 0) )
 	npcShooter1:Spawn()
+	
+	--Vector(500, 150, 0)
+	local npcShooter2 = ents.Create("nextbot_soldierRanged")
+	npcShooter2:SetPos(Vector(500, 150, 0) )
+	npcShooter2:Spawn()	
+	
 	
 	--local wep = ents.Create("weapon_shotgun")
 	--wep:SetOwner(npcShooter)
@@ -78,6 +84,14 @@ function GM:PlayerSpawn( ply )
 	local npcRunner1 = ents.Create("nextbot_soldierRunner")
 	npcRunner1:SetPos(ply:GetPos() + Vector(-900, 80, 0) )
 	npcRunner1:Spawn()
+	
+	local npcRunner2 = ents.Create("nextbot_soldierRunner")
+	npcRunner2:SetPos(ply:GetPos() + Vector(-1000, 80, 0) )
+	npcRunner2:Spawn()
+	
+	local npcRunner3 = ents.Create("nextbot_soldierRunner")
+	npcRunner3:SetPos(ply:GetPos() + Vector(-1100, 80, 0) )
+	--npcRunner3:Spawn()
 	
 	
 	ply:Give("weapon_shotgun")

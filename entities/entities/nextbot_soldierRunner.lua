@@ -43,6 +43,7 @@ function ENT:Initialize()
     self:SetModel( "models/Humans/Group01/Female_01.mdl" )
 	--"models/Humans/Group01/Female_01.mdl" 
 	--"models/Zombie/Classic.mdl"
+	--models/dog.mdl
 	self.LoseTargetDist	= 2000	
 	self.SearchRadius 	= 1000	
 	
@@ -54,8 +55,9 @@ function ENT:Initialize()
 	-- -800, 80, 0
 	--self.cover = { x=-800, y=80, z=0 }
 	
-	self.cover = Vector(-800, 80, 0)
-	self.coverSt = Vector(-500, 80, 0)
+	self.cover1 = Vector(-800, 80, 0)
+	self.cover2 = Vector(-500, 80, 0)
+	self.cover3 = Vector(500, 150, 0)
 	
 	self.coverNew = Vector(-800, 80, 0 ) * 1.05
 	--print(self.coverNew)
@@ -64,16 +66,17 @@ function ENT:Initialize()
 	--get new point for cover
 	--self.cover:Sub(self.coverSt)
 	print("new coord")
-	print(self.cover)
+	print(self.cover1)
 	
-	self:SetHealth(80)
+	self:SetHealth(120)
 	
 	self.TestCircle = Vector(-500, 80, 0)
 	 
 	 -- радиус нпс кружляет вокруг игрока  
-	self.radius = 300
-    
-   
+	self.radius = 800 + math.random(50, 150)
+	-- даем переменную что определяет в какую сторону крутится
+    --self.circleWay = 1 * math.random(-1, 1)
+     self.circleWay = 1 
    
 end
 
@@ -131,6 +134,9 @@ end
 --добавит звуки, анимации-реакции на игрока(мол зомби увидел игрока)
 
 function ENT:RunBehaviour()
+	
+
+	
 	while ( true ) do
 		
 		--if ( self:HaveEnemy() ) then
@@ -138,28 +144,43 @@ function ENT:RunBehaviour()
 		self:HaveEnemy()
 		self:StartActivity( ACT_IDLE )
 		if ( self:PlayerNear() ) then
+		    
+			while ( true ) do
+			
 		    --print( self:GetPos() )
-			self:StartActivity( ACT_IDLE )		
+			--self:StartActivity( ACT_IDLE )		
 			--self:StartActivity( ACT_RUN )		
 		    
 			--self:StartActivity( ACT_WALK )			
-			self.loco:SetDesiredSpeed( 300 )	
+			self.loco:SetDesiredSpeed( 350 )	
 			self:StartActivity( ACT_RUN )
 			--self:StartActivity( ACT_WALK )
 			
-			--self:RunAtTarget(self:GetEnemy():GetPos())
+			self:CircleAroundTarget(self:GetEnemy():GetPos())
+			
+			if(self:Health()<=50) then
+			self:TakeCover(self:ChooseCover())
+			end
+			
+			print("    RUN AT YOU   ")
+			self.loco:SetAcceleration(600)
+			self.loco:SetDesiredSpeed( 600 )	
+			self:RunAtTarget(self:GetEnemy():GetPos())
+			fff = self:ChooseCover()
+			print(fff)
 			--self.TestCircle
 			
 			--дать ускорение при набегании
-			self:CircleAroundTarget(self:GetEnemy():GetPos())
+			--self:CircleAroundTarget(self:GetEnemy():GetPos())
 			
 			
 			--self:CircleAroundTarget(self.TestCircle)
 			
 			-- Takecover
 			--if(self:Health()<=10)
-			if(self:Health()<=70) then
-			self:TakeCover(self.cover)
+			self.loco:SetDesiredSpeed( 350 )
+			if(self:Health()<=50) then
+			self:TakeCover(self:ChooseCover())
 			end
 			print("Health")
 			print(self:Health())
@@ -168,8 +189,7 @@ function ENT:RunBehaviour()
 			--ACT_COVER   X
 			--self:StartActivity( ACT_COVER_LOW )
 			
-			
-			
+			end
 		
 
 		else
@@ -180,6 +200,8 @@ function ENT:RunBehaviour()
 		coroutine.wait(1)
 		
 	end
+
+
 
 end	
 
@@ -247,6 +269,8 @@ function ENT:TakeCover( dest )
 	
 	--self:GetEnemy():GetPos()
 	
+	self:EmitSound( "vo/eli_lab/al_dad_scared01.wav" )
+	
 	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=40) do
 	
 	    -- creat new point to hide behind cover 
@@ -280,16 +304,52 @@ function ENT:TakeCover( dest )
 			self:HandleStuck()
 			return "stuck"
 		end
-
+   
 		coroutine.yield()
 
 	end
 	
+	
+	-- спрятались, если не убили через пол секунды вернули 50 хп
 	self:StartActivity( ACT_COVER_LOW )
+	coroutine.wait(0.5)
+	self:SetHealth(60)
+
 	return "ok"
 end
 
 
+-- выбрать ближайшее укрытие
+-- несколько укрытий и их координаты
+-- измеряем расстояние до каждого из них
+-- возвращаем самый короткий
+function ENT:ChooseCover( )
+--path:GetLength()
+--number Vector:Length()
+
+     length1 = self:GetPos() - self.cover1
+	  length2 = self:GetPos() - self.cover2
+	   length3 = self:GetPos() - self.cover3
+	  
+	--
+     length1Length = length1:LengthSqr()
+	  length2Length = length2:LengthSqr()
+	   length3Length = length3:LengthSqr()
+	  
+	--math.min
+	result = math.min(length1Length, length2Length, length3Length) 
+	
+	if(result == length1Length) then 
+	return self.cover1
+	elseif(result == length2Length) then
+	return self.cover2
+	else 
+	return self.cover3
+	end
+
+	  
+
+end
 
 --run at target in strait line,if player near target takes damage
 function ENT:RunAtTarget(dest)
@@ -303,17 +363,41 @@ function ENT:RunAtTarget(dest)
     if ( !path:IsValid() ) then return "failed" end
 	    
 		-- заранее указывааем координату игрока,что бы она не обновлялась
-		local targetX = dest.x
+
+		
+		self:EmitSound( "npc/headcrab_poison/ph_scream1.wav" )
+		
+					local targetX = dest.x
 		local targetY = dest.y
 		
-		local k = 2
-		
-		local newX =  k*targetX +(1-k)*self:GetPos().x
-		local newY =  k*targetY +(1-k)*self:GetPos().y
+		local k = 1.2
+		 -- растояние относительно, если игрок оч близко к нпс,он пробежит оч мало
+		local newX =  k*targetX +(1-k)*self:GetPos().x 
+		local newY =  k*targetY +(1-k)*self:GetPos().y 
 		local newCoord = Vector(newX, newY)
 	
-	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
+	while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=22) do
+	
 	--будет лучше если точка игрока не будет менятся он должен бежать по прямой
+	
+	
+	 lengthRun = self:GetPos() - self:GetEnemy():GetPos()
+	 lengthRunLenght = lengthRun:LengthSqr()
+	 print("--------- lenght to player ----------")
+	print(lengthRunLenght)
+	 print("--------- lenght to player END ----------")
+	
+     --  
+	 
+
+	 --   if (lengthRunLenght<=1800 and path:GetAge() > 0.1)then
+	 if (lengthRunLenght<=1900 )then
+	    oldHP = self:GetEnemy():Health()
+        self:GetEnemy():SetHealth(oldHP - 10)
+		print("     PLAYER GOT HIT BY RUN     ")
+	 end
+	 
+	 --
 
 		
 		if ( path:GetAge() > 0.1 ) then					
@@ -355,36 +439,50 @@ function ENT:CircleAroundTarget(dest)
 -- дать разные звуки для набегание
 
     function PointOnCircle( ang, radius, offX, offY )
-	print("______________________________")
-	 print("angle")
-	 print(ang)
+	--print("______________________________")
+	-- print("angle")
+	-- print(ang)
 	 
 	 ang =  math.rad( ang )
 	 local x = math.cos( ang ) * radius + offX
 	 local y = math.sin( ang ) * radius + offY
 	 
-	 print("CALCULATED POINTOnCircle x, y, ang")
-	 print(x, y, ang)
-	 print("_______________________________")
+	-- print("CALCULATED POINTOnCircle x, y, ang")
+	-- print(x, y, ang)
+	-- print("_______________________________")
 	 return x, y
     end
+	
+	
+	         if(self.circleWay == 1) then
+			   self.degrees = 1
+			 else
+			   self.degrees = 360
+			 end
 
 
     local centerX, centerY = dest.x, dest.y
 	--           радиус от игрока и нсп
     --local radius = 250
+	
+		     local xCircle, yCircle = PointOnCircle( self.degrees, self.radius, centerX, centerY )
+			 local newCoord = Vector(xCircle, yCircle)
+			 
+		 
 
 
 	local dest = dest or {}
 	local path = Path( "Follow" )
 	path:SetMinLookAheadDistance( dest.lookahead or 300 )
 	path:SetGoalTolerance( dest.tolerance or 20 )
-	path:Compute( self, dest )	
+	--path:Compute( self, dest )	
+	path:Compute( self, newCoord )
 
     if ( !path:IsValid() ) then return "failed" end
 	
-	print("STARTED TO CIRCLE")
-	
+	--	print(" ----------------____________________________________________________________________________ ")
+	--print(" ----------------________________-    STARTED TO CIRCLE   ----------------___________________ ")
+	--print(" ----------------____________________________________________________________________________ ")
 	
 	
 	-- !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -400,10 +498,13 @@ function ENT:CircleAroundTarget(dest)
 	--как мне знать наверняка что он дойдет до координаты,или он не успеет и шагу сделать как будет новая координата и круга не будет
 	-- нужно проверять
 	
-    degrees = 1
-	
+
+			 
+    --self.degrees = 1
+	 
+	 --self.Over = "not"
 	--  while ( path:IsValid() and self:HaveEnemy() and path:GetLength()>=60) do
-	while ( path:IsValid() and self:HaveEnemy() ) do
+	while ( path:IsValid() and self:HaveEnemy() and self.degrees != 2  ) do
 	       --print("CIRCLING")
 		   -- local centerX, centerY = dest.x, dest.y
 		   --self:GetEnemy():GetPos().x
@@ -413,18 +514,38 @@ function ENT:CircleAroundTarget(dest)
 		   local centerX = self:GetEnemy():GetPos().x
 		   local centerY = self:GetEnemy():GetPos().y
 	         -- получаем новую координату 
-		     local xCircle, yCircle = PointOnCircle( degrees, self.radius, centerX, centerY )
+		     local xCircle, yCircle = PointOnCircle( self.degrees, self.radius, centerX, centerY )
 			 local newCoord = Vector(xCircle, yCircle)
-			  degrees = degrees + 10
+			 
+			 if(self.circleWay == 1) then
+			   self.degrees = self.degrees + 10
+			   print(self.circleWay)
+			 else
+			   self.degrees = self.degrees - 10
+			   print(self.circleWay)
+			 end
+			 
+			  
 			  print("DEGREES")
-			  print(degrees)
+			  print(self.degrees)
 			  print("COORD")
 			  print(newCoord)
 			  
-			  if (degrees >= 360) then
-			  degrees = 1
-			  print("     -------- NOW DEGREES IS 1 -------    ")
+			  
+			  if(self.circleWay == 1 and self.degrees >= 360) then
+			    self.degrees = 2
+			  elseif (self.circleWay == -1 and self.degrees <= 0) then
+			    self.degrees = 2
+			  else
+			  --print("some mistake")
 			  end
+			  
+			  -- if (self.degrees >= 360) then БЫЛО
+			  --if (self.degrees > 360) then
+			 -- self.degrees = 2
+			--  print("     -------- NOW DEGREES IS 1 -------    ")
+			  
+			 -- end
 			 
 			 
 			 -- _______________________________________________
